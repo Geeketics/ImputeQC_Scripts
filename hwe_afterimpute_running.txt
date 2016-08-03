@@ -1,0 +1,74 @@
+mkdir HardyWeinberg/European HardyWeinberg/African HardyWeinberg/Asian HardyWeinberg/Polynesian
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-EuropeanList_ImputeFID.txt HardyWeinberg/European/{}_Self-European' ::: $(seq 1 22)
+
+wc -l HardyWeinberg/European/*_Self-European.hwe.out
+for i in $(ls HardyWeinberg/European/*_Self-European.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/European/Exclude_Self-European.hwe.out; done
+wc -l HardyWeinberg/European/Exclude_Self-European.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/PCA-EuropeanList_ImputeFID.txt HardyWeinberg/European/{}_PCA-European' ::: $(seq 1 22)
+
+wc -l HardyWeinberg/European/*_PCA-European.hwe.out
+for i in $(ls HardyWeinberg/European/*_PCA-European.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/European/Exclude_PCA-European.hwe.out; done
+wc -l HardyWeinberg/European/Exclude_PCA-European.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-PolynesianList_ImputeFID.txt HardyWeinberg/Polynesian/{}_Self-Polynesian' ::: $(seq 1 22)
+
+wc -l HardyWeinberg/Polynesian/*_Self-Polynesian.hwe.out
+for i in $(ls HardyWeinberg/Polynesian/*_Self-Polynesian.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/Polynesian/Exclude_Self-Polynesian.hwe.out; done
+wc -l HardyWeinberg/Polynesian/Exclude_Self-Polynesian.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-AfricanList_ImputeFID.txt HardyWeinberg/African/{}_Self-African' ::: $(seq 1 22)
+
+wc -l HardyWeinberg/African/*_Self-African.hwe.out
+for i in $(ls HardyWeinberg/African/*_Self-African.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/African/Exclude_Self-African.hwe.out; done
+wc -l HardyWeinberg/African/Exclude_Self-African.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-AsianList_ImputeFID.txt HardyWeinberg/Asian/{}_Self-Asian' ::: $(seq 1 22)
+
+wc -l HardyWeinberg/Asian/*_Self-Asian.hwe.out
+for i in $(ls HardyWeinberg/Asian/*_Self-Asian.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/Asian/Exclude_Self-Asian.hwe.out; done
+wc -l HardyWeinberg/Asian/Exclude_Self-Asian.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-EasternPolynesianHighList_ImputeFID.txt HardyWeinberg/Polynesian/{}_Self-EastPolynesian' ::: $(seq 1 22)
+wc -l HardyWeinberg/Polynesian/*_Self-EastPolynesian.hwe.out
+for i in $(ls HardyWeinberg/Polynesian/*_Self-EastPolynesian.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/Polynesian/Exclude_Self-EastPolynesian.hwe.out; done
+wc -l HardyWeinberg/Polynesian/Exclude_Self-EastPolynesian.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh {}_renamed.vcf.gz ~/ShortCuts/Resources/Self-WesternPolynesianList_ImputeFID.txt HardyWeinberg/Polynesian/{}_Self-WestPolynesian' ::: $(seq 1 22)
+wc -l HardyWeinberg/Polynesian/*_Self-WestPolynesian.hwe.out
+for i in $(ls HardyWeinberg/Polynesian/*_Self-WestPolynesian.hwe.out); do awk '{print $2}' $i >> HardyWeinberg/Polynesian/Exclude_Self-WestPolynesian.hwe.out; done
+wc -l HardyWeinberg/Polynesian/Exclude_Self-WestPolynesian.hwe.out
+
+parallel '~/ShortCuts/scripts/hwe_afterimpute.sh ~/ShortCuts/working_dir/StrandFixed/ARIC/affy6/vcf/all_chr_strandaligned.filt_refallele_maf0.01_hwe_checked.vcf.gz ~/ShortCuts/Resources/{}List_ImputeFID.txt HardyWeinberg/UnImputed/all_unimputed_{}' ::: Self-African Self-European PCA-European
+parallel 'awk "{print $2}" $i >> HardyWeinberg/UnImputed/Exclude_{}.hwe.out' ::: Self-African Self-European PCA-European
+wc -l HardyWeinberg/UnImputed/Exclude_Self-European.hwe.out
+
+
+### convert .frq file to tab separated
+parallel "cat HardyWeinberg/{}.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/{}.frq.tab" ::: $(seq 1 22)
+parallel "cat HardyWeinberg/African/{}_Self-African.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/African/{}_Self-African.frq.tab" ::: $(seq 1 22)
+parallel "cat HardyWeinberg/Asian/{}_Self-Asian.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/Asian/{}_Self-Asian.frq.tab" ::: $(seq 1 22)
+parallel "cat HardyWeinberg/European/{}_Self-European.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/European/{}_Self-European.frq.tab" ::: $(seq 1 22)
+parallel "cat HardyWeinberg/Polynesian/{}_Self-Polynesian.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/Polynesian/{}_Self-Polynesian.frq.tab" ::: $(seq 1 22)
+
+parallel "cat HardyWeinberg/European/{}_PCA-European.frq | tr -s ' ' | tr ' ' '\t' | sed 's/^\t//g' | sed 's/\t$//g' > HardyWeinberg/European/{}_PCA-European.frq.tab" ::: $(seq 1 22)
+
+
+
+### extract vcf info and merge with HWE
+mkdir Info; parallel '~/ShortCuts/scripts/extractVCFinfo.sh {}_renamed Info/{}_renamed' ::: $(seq 1 22)
+mkdir Quality
+
+parallel 'Rscript ~/ShortCuts/scripts/merge_info_hwe.R Info/{}_impute_renamed.info HardyWeinberg/{}.hwe.tab HardyWeinberg/{}.frq.tab Quality/{}_AllPops' ::: $(seq 1 22)
+
+parallel -j 10 'Rscript ~/ShortCuts/scripts/merge_info_hwe.R Info/{1}_impute_renamed.info HardyWeinberg/{2}/{1}_Self-{2}.hwe.tab HardyWeinberg/{2}/{1}_Self-{2}.frq.tab Quality/{1}_{2}' ::: $(seq 1 22) ::: African Asian European Polynesian
+
+parallel 'Rscript ~/ShortCuts/scripts/merge_info_hwe.R Info/{}_impute_renamed.info HardyWeinberg/Polynesian/{}_Self-EastPolynesian.hwe.tab HardyWeinberg/Polynesian/{}_Self-EastPolynesian.frq.tab Quality/{}_EastPolynesian' ::: $(seq 1 22)
+parallel 'Rscript ~/ShortCuts/scripts/merge_info_hwe.R Info/{}_impute_renamed.info HardyWeinberg/Polynesian/{}_Self-WestPolynesian.hwe.tab HardyWeinberg/Polynesian/{}_Self-WestPolynesian.frq.tab Quality/{}_WestPolynesian' ::: $(seq 1 22)
+
+### plot infoscore
+parallel -j 4 'Rscript ~/ShortCuts/scripts/plot_infoscore.R Quality/{1}_{2}.info.hwe.frq Quality/{1}_{2}' ::: $(seq 1 22) ::: AllPops European
+
+
+

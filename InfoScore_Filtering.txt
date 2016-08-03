@@ -1,0 +1,48 @@
+
+## Extract the first 8 columns of the imputed .vcf.gz files
+parallel 'zcat coreExome-ArdeaBatch.vcfs/{}.vcf.gz | cut -f1-8 | grep -v "^##" > Imputed_ARDEA_{}.info' ::: $(seq 1 22)
+
+## Join all the chromosomes together
+cp Imputed_Matsuo_1.info Imputed_Matsuo_all.info; for i in $echo {2..22}; do tail -n +2 Imputed_Matsuo_$i.info >> Imputed_Matsuo_all.info; done
+
+## Pull out just the chr, pos, snp, and info score columns
+cat Imputed_Batch2-NZ_all.info | tr '=' '\t' | awk '{OFS="\t";print $1 "\t" $2 "\t" $3 "\t" $12}' > Imputed_Batch2-NZ_all_INFO.info
+
+## Make a list of all the "low quality" SNPs
+awk '{if($4 < 0.3){print}}' Imputed_QCbatch4-Mix_all_INFO.info > Imputed_QCbatch4-Mix_LowQualityINFO-3.info
+awk '{if($4 < 0.8){print}}' Imputed_QCbatch4-Mix_all_INFO.info > Imputed_QCbatch4-Mix_LowQualityINFO-8.info
+
+## Plot Info Score manhattan and histogram, whole genome + by chromosome
+Rscript ../../../scripts_Tanya/imputationinfo.R Imputed_QCbatch4-Mix_all_INFO.info
+Rscript ../../../scripts_Tanya/imputationinfo_bychr.R Imputed_QCbatch4-Mix_all_INFO.info
+
+## Filter the imputed .vcf.gz files
+parallel 'bcftools view --exclude "INFO/INFO < 0.3" --output-type z --output-file Imputed_QCbatch1_chr-{}.vcf.gz coreExome-AgResearchBatch.vcfs/{}.vcf.gz' ::: $(seq 1 22)
+
+## Make index files
+parallel 'tabix -p vcf Imputed_QCBatch1_chr-{}.vcf.gz' ::: $(seq 1 22)
+
+## Join all the chromosomes together
+## Not necessary for analysis - just do GWAS by chromosome
+#bcftools concat --output-type z --output-file Imputed_QCbatch1_chr-all.vcf.gz $(for i in $(seq 1 22); do echo Imputed_QCbatch1_chr-${i}.vcf.gz; done | tr '\n' ' ')
+
+## Join the different datasets together
+### Filepaths:
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch1_AgRes/Imputed/Imputed_QCbatch1_chr-{}.vcf.gz
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch2_NZ/Imputed/Imputed_QCbatch2_chr-{}.vcf.gz
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch3_ARDEA/Imputed/Imputed_QCbatch3_chr-{}.vcf.gz
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch4_Mix/Imputed/Imputed_QCbatch4_chr-{}.vcf.gz
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/ARIC/affy6/Imputed/Imputed_ARIC_Affy6_14Dec_chr-{}.vcf.gz 
+### /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/Matsuo_OMNI/Imputed/Imputed_Matsuo_chr-{}.vcf.gz
+parallel 'bcftools merge --merge id --output-type z --output Imputed_Merged_ARIC_Matsuo_Batch1-4_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch1_AgRes/Imputed/Imputed_QCbatch1_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch2_NZ/Imputed/Imputed_QCbatch2_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch3_ARDEA/Imputed/Imputed_QCbatch3_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/CoreExome/QC_Batch4_Mix/Imputed/Imputed_QCbatch4_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/ARIC/affy6/Imputed/Imputed_ARIC_Affy6_14Dec_chr-{}.vcf.gz /Volumes/BiochemXsan/scratch/merrimanlab/murray/working_dir/StrandFixed/Matsuo_OMNI/Imputed/Imputed_Matsuo_chr-{}.vcf.gz' ::: $(seq 1 22)
+parallel 'tabix -p vcf Imputed_Merged_ARIC_Matsuo_Batch1-4_chr-{}.vcf.gz' ::: $(seq 1 22)
+
+## Convert .vcf.gz files to .{bed,bim,fam} plink set
+parallel 'plink2 --vcf Imputed_Merged_ARIC_Matsuo_Batch1-4_chr-{}.vcf.gz --make-bed --out Imputed_Merged_ARIC_Matsuo_Batch1-4_chr-{}' ::: $(seq 1 22)
+
+#############
+
+## Rename "." labelled SNPs to chr_pos_A1_A2
+source /Volumes/BiochemXsan/staff_users/tanyaflynn/.bashrc 
+parallel '~/MyTools/bin/scripts/renameSNP.sh {}.vcf.gz {}_renamed.vcf.gz' ::: $(seq 1 22)
+
